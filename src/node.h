@@ -38,7 +38,9 @@ typedef struct node {
     double xcontrolMean[20];
 } Node, *pNode;
 
-
+/*
+ * cptable: complexity parameter table
+ */
 typedef struct cptable {
     double cp;
     double risk;

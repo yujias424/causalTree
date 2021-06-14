@@ -84,7 +84,7 @@ causalTree <- function(formula, data, weights, treatment, subset,
 		} 
 		if (missing(bucketNum)) {
 			# number of treat cases or control cases in one bucket
-			#Numbuckets = max(minsize, min(round(numtreated/bucketNum),round(numcontrol/bucketNum),bucketMax))
+			# Numbuckets = max(minsize, min(round(numtreated/bucketNum),round(numcontrol/bucketNum),bucketMax))
 			bucketNum <- 5
 			# at least 5 obs in one bucket
 		}

@@ -450,8 +450,8 @@ causalTree(SEXP ncat2, SEXP split_Rule2, SEXP bucketnum2, SEXP bucketMax2, SEXP 
 
     /*
      * Fix up the 'which' array
-     *  Nodes are sometimes trimmed during the
-     *  tree building, and 'which' is not updated in that case
+     * Nodes are sometimes trimmed during the
+     * tree building, and 'which' is not updated in that case
      */
     for (i = 0; i < n; i++) {
         k = ct.which[i];
