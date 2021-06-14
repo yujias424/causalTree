@@ -25,6 +25,7 @@ extern void totD(int n, double *y[], double *x, int nclass, int edge, double *im
                       int bucketMax);
 extern double totDpred(double *y, double wt, double treatment, double *yhat, double p);
 
+/* CT.c */
 extern int CTinit(int n, double *y[], int maxcat, char **error,
            int *size, int who, double *wt, double *treatment, int bucketnum, 
            int bucketMax, double *train_to_est_ratio);
@@ -35,6 +36,7 @@ extern void CT(int n, double *y[], double *x, int nclass,int edge, double *impro
                double train_to_est_ratio);
 extern double CTpred(double *y, double wt, double treatment, double *yhat, double propensity);
 
+/* CTD.c */
 extern int CTDinit(int n, double *y[], int maxcat, char **error, int *size,
                    int who, double *wt, double *treatment, int bucketnum, int bucketMax,
                    double *train_to_est_ratio);
@@ -48,6 +50,7 @@ extern void CTD(int n, double *y[], double *x, int nclass,
 extern double CTDpred(double *y, double wt, double treatment, double *yhat, 
                       double propensity); 
 
+/* fit.c*/
 extern int fitinit(int n, double *y[], int maxcat, char **error,
             int *size, int who, double *wt, double *treatment, int bucketnum, 
             int bucketMax, double *train_to_est_ratio);

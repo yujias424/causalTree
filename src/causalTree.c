@@ -2,7 +2,7 @@
  * The main entry point for recursive partitioning routines.
  *
  * Input variables:
- *      ncat    = # categories for each var, 0 for continuous variables.
+ *      ncat       = # categories for each var, 0 for continuous variables.
  *      split_Rule = 1 - TOT
  *                   2 - CT
  *                   3 - fit
@@ -10,35 +10,35 @@
  *      Numbuckets = 0 - no discrete
  *                   o.w. - discrete
  *      
- *      crossmeth = 1 - TOT
- *                  2 - matching
- *                  3 - fitH
- *                  4 - fitA
- *                  5 - CTH
- *                  6 - CTA
+ *      crossmeth  = 1 - TOT
+ *                   2 - matching
+ *                   3 - fitH
+ *                   4 - fitA
+ *                   5 - CTH
+ *                   6 - CTA
  *                  
- *      opt  =  vector of options.  Same order as causalTree.control, as a vector
+ *      opt        =  vector of options.  Same order as causalTree.control, as a vector
  *                   of doubles.
- *      minsize = minimum number of treated observations, control observations in a leaf
- *      p = propensity score
- *      xvals  = number of cross-validations to do
- *      xgrp  = indices for the cross-validations
- *      ymat  = vector of response variables
- *      xmat  = matrix of continuous variables
- *      wt      = vector of case weights
- *      treatment = vector of case treatment status: 1= treated, 0 = control
- *      ny   = number of columns of the y matrix (it is passed in as a vector)
- *      cost = nost
- *      xvar = vector of x features variance in column
- *      alpha = weight parameter for error function 
+ *      minsize    = minimum number of treated observations, control observations in a leaf
+ *      p          = propensity score
+ *      xvals      = number of cross-validations to do
+ *      xgrp       = indices for the cross-validations
+ *      ymat       = vector of response variables
+ *      xmat       = matrix of continuous variables
+ *      wt         = vector of case weights
+ *      treatment  = vector of case treatment status: 1= treated, 0 = control
+ *      ny         = number of columns of the y matrix (it is passed in as a vector)
+ *      cost       = nost
+ *      xvar       = vector of x features variance in column
+ *      alpha      = weight parameter for error function 
  *
  * Returned: a list with elements
- *      which = vector of final node numbers for each input obs
- *      cptable = the complexity table
- *      dsplit = for each split, numeric variables (doubles)
- *      isplit = for each split, integer variables
- *      dnode =  for each node, numeric variables
- *      inode =  for each node, integer variables
+ *      which      = vector of final node numbers for each input obs
+ *      cptable    = the complexity table
+ *      dsplit     = for each split, numeric variables (doubles)
+ *      isplit     = for each split, integer variables
+ *      dnode      =  for each node, numeric variables
+ *      inode      =  for each node, integer variables
  *
  *   Naming convention: ncat = pointer to an integer vector, ncat2 = the
  *   input R object (SEXP) containing that vector, ncat3 = an output S object
@@ -47,7 +47,7 @@
 
 #define MAINRP
 #include <math.h>
-#include<stdio.h>
+#include <stdio.h>
 #include "causalTree.h"
 #include "node.h"
 #include "func_table.h"
@@ -61,10 +61,10 @@ causalTree(SEXP ncat2, SEXP split_Rule2, SEXP bucketnum2, SEXP bucketMax2, SEXP 
         SEXP xvar2, SEXP split_alpha2, SEXP cv_alpha2, SEXP NumHonest2, SEXP gamma2)
 {
     pNode tree;          /* top node of the tree */
-    char *errmsg;
+    char *errmsg;        /* get the value errmsg pointed to */
     int i, j, k, n;
-    int maxcat;
-    double temp, temp2;
+    int maxcat;          /* maximum categories for each var ???*/
+    double temp, temp2;  
     int *savesort = NULL /* -Wall */ ;
     double *dptr;               /* temp */
     int *iptr;
@@ -74,10 +74,11 @@ causalTree(SEXP ncat2, SEXP split_Rule2, SEXP bucketnum2, SEXP bucketMax2, SEXP 
     int bucketMax;
     int crossmeth;
     int crosshonest;
+
     /*
      * pointers to R objects
      */
-    int *ncat, *xgrp;
+    int *ncat, *xgrp; /* get the value that pointer ncat and xgrp pointed to*/
     int xvals;
 
     double *wt;
@@ -98,7 +99,7 @@ causalTree(SEXP ncat2, SEXP split_Rule2, SEXP bucketnum2, SEXP bucketMax2, SEXP 
 
     /* work arrays for the return process */
     int nodecount, catcount, splitcount;
-    double **ddnode, *ddsplit[3];
+    double **ddnode, *ddsplit[3]; /* ** pointer of the pointer */
     int *iinode[6], *iisplit[3];
     int **ccsplit;
     double scale;
@@ -114,7 +115,7 @@ causalTree(SEXP ncat2, SEXP split_Rule2, SEXP bucketnum2, SEXP bucketMax2, SEXP 
     propensity = asReal(p2);
     split_alpha = asReal(split_alpha2);
     cv_alpha = asReal(cv_alpha2);
-    gamma=asReal(gamma2);
+    gamma = asReal(gamma2);
     method = asInteger(method2); 
     crossmeth = asInteger(crossmeth2);
     crosshonest = asInteger(crosshonest2);
@@ -140,17 +141,16 @@ causalTree(SEXP ncat2, SEXP split_Rule2, SEXP bucketnum2, SEXP bucketMax2, SEXP 
         cv_id = crossmeth - 1;
         ct_init = split_func_table[split_id].init_split;
         ct_choose = split_func_table[split_id].choose_split;
-        ct_eval = split_func_table[split_id].eval;
+        ct_eval = split_func_table[split_id].eval; // split_func_table is from func_table.h, a struct "split_func_table"
         ct_xeval = cv_func_table[cv_id].xeval;
-        ct.num_y = asInteger(ny2);
+        ct.num_y = asInteger(ny2); // ct is from causalTree.h, a struct "ct"
     } else {
         error(_("Invalid value for 'split.Rule' or 'cv.option' "));
     }
     
-    
-    
     /*
      * set some other parameters
+     * mainly for struct ct (the causal tree).
      */
     dptr = REAL(opt2);
     ct.min_node = (int) dptr[1];
@@ -286,7 +286,7 @@ causalTree(SEXP ncat2, SEXP split_Rule2, SEXP bucketnum2, SEXP bucketMax2, SEXP 
    
 
     nodesize = sizeof(Node) + (ct.num_resp - 20) * sizeof(double);
-    tree = (pNode) ALLOC(1, nodesize);
+    tree = (pNode) ALLOC(1, nodesize); // pnode from node.h
     memset(tree, 0, nodesize);
     tree->num_obs = n;
     tree->sum_wt = temp;
@@ -300,6 +300,8 @@ causalTree(SEXP ncat2, SEXP split_Rule2, SEXP bucketnum2, SEXP bucketMax2, SEXP 
          &(tree->risk), wt, treatment, ct.max_y, ct.propensity);
     } else if (split_Rule == 2) {
         // ct:
+        // tree->response_est: get the response_est from struct that "tree" pointed to. (tree is a pnode struct)
+        // "*ct_eval": split_func_table[split_id].eval -- CTss
         (*ct_eval) (n, ct.ydata, tree->response_est, tree->controlMean, tree->treatMean, 
          &(tree->risk), wt, treatment, ct.max_y, split_alpha, train_to_est_ratio);
     } else if (split_Rule == 3) {

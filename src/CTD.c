@@ -1,5 +1,5 @@
 /*
- * The discrte version for CT
+ * The discrete version for CT
  */
 #include "causalTree.h"
 #include "causalTreeproto.h"
