@@ -141,7 +141,7 @@ causalTree(SEXP ncat2, SEXP split_Rule2, SEXP bucketnum2, SEXP bucketMax2, SEXP 
         cv_id = crossmeth - 1;
         ct_init = split_func_table[split_id].init_split;
         ct_choose = split_func_table[split_id].choose_split;
-        ct_eval = split_func_table[split_id].eval; // split_func_table is from func_table.h, a struct "split_func_table"
+        ct_eval = split_func_table[split_id].eval; // pslit_func_table is from func_table.h, a struct "split_func_table"
         ct_xeval = cv_func_table[cv_id].xeval;
         ct.num_y = asInteger(ny2); // ct is from causalTree.h, a struct "ct"
     } else {

@@ -34,7 +34,7 @@ causalForest <- function(formula, data, treatment,
                          propensity, control, split.alpha = 0.5, cv.alpha = 0.5,
                          sample.size.total = floor(nrow(data) / 10), sample.size.train.frac = .5,
                          mtry = ceiling(ncol(data)/3), nodesize = 1, num.trees=nrow(data),
-                         cost=F, weights=F,ncolx,ncov_sample) {
+                         cost=F, weights=F, ncolx, ncov_sample) {
   
   # do not implement subset option of causalTree, that is inherited from rpart but have not implemented it here yet
   vars <- all.vars(formula)
@@ -60,6 +60,14 @@ causalForest <- function(formula, data, treatment,
     train.size <- round(sample.size.train.frac * sample.size)
     est.size <- sample.size - train.size  
   }
+
+  # get the test dataset for future consistent tree
+  test.size <- num.obs - sample.size
+
+  if (double.Sample) {
+    train.size.test <- round(sample.size.train.frac * test.size)
+    est.size.test <- test.size - train.size.test
+  }
   
   print("Building trees ...")
   
@@ -68,10 +76,17 @@ causalForest <- function(formula, data, treatment,
     print(paste("Tree", as.character(tree.index)))
     
     full.idx <- sample.int(num.obs, sample.size, replace = FALSE)
+
+    # test set idx
+    full.idx.test <- seq(1, num.obs)[!(seq(1, num.obs) %in% full.idx)]
     
     if(double.Sample) {
       train.idx <- full.idx[1:train.size]
       reestimation.idx <- full.idx[(train.size + 1):sample.size]
+
+      # test set double sample
+      train.idx.test <- full.idx.test[1:train.size.test]
+      reestimation.idx.test <- full.idx.test[(train.size.test + 1):test.size]
     }
     
     #randomize over the covariates for splitting (both train and reestimation)
@@ -107,6 +122,10 @@ causalForest <- function(formula, data, treatment,
       if (double.Sample) {
         dataTree <- data.table(data[train.idx, ])
         dataEstim <- data.table(data[reestimation.idx, ])
+
+        # test set
+        dataTree.test <- data.table(data[train.idx.test, ])
+        dataEstim.test <- data.table(data[reestimation.idx.test, ])
       }else{
         dataTree <- data.table(data[full.idx, ])
       }
@@ -121,6 +140,10 @@ causalForest <- function(formula, data, treatment,
       if (double.Sample) {
           dataTree <- data.frame(data[train.idx, ])
           dataEstim <- data.frame(data[reestimation.idx, ])
+
+          # test set
+          dataTree.test <- data.frame(data[train.idx.test, ])
+          dataEstim.test <- data.frame(data[reestimation.idx.test, ])
         }else{
           dataTree <- data.frame(data[full.idx, ])
         }
