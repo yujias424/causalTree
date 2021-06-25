@@ -151,17 +151,17 @@ cf_const <- consistentcausalForest(as.formula(paste("y~",f)), data=dataTrain, tr
                    split.Rule="CT", double.Sample = T, split.Honest=T,  split.Bucket=F, bucketNum = 5,
                    bucketMax = 100, cv.option="CT", cv.Honest=T, minsize = 2L, 
                    split.alpha = 0.5, cv.alpha = 0.5,
-                   sample.size.total = floor(nrow(dataTrain) / 5), sample.size.train.frac = .5,
-                   mtry = ceiling(ncol(dataTrain)/3), nodesize = 3, num.trees= 50,ncolx=ncolx, ncov_sample=ncov_sample
+                   sample.size.total = floor(nrow(dataTrain) / 2), sample.size.train.frac = .5,
+                   mtry = ceiling(ncol(dataTrain)/3), nodesize = 3, num.trees= 100,ncolx=ncolx, ncov_sample=ncov_sample
 ) 
 
 cfpredtest <- predict(cf_const, newdata=dataTest, weight.type = 2, type="vector")
 cor.test(dataTest$tau_true, cfpredtest)
-plot(dataTest$tau_true, cfpredtest)
+plot(dataTest$tau_true, cfpredtest, ylim = c(0,3))
 
 cfpredtest <- predict(cf_const, newdata=dataTest, weight.type = NULL, type="vector")
 cor.test(dataTest$tau_true, cfpredtest)
-plot(dataTest$tau_true, cfpredtest)
+plot(dataTest$tau_true, cfpredtest, ylim = c(0,3))
 
 # # get.tree.struct(cf[[1]])
 # # get.tree.struct(cf[[2]])

@@ -158,7 +158,7 @@ causalForest <- function(formula, data, treatment,
     if (double.Sample) {
       tree.obj <- honest.causalTree(formula, data = dataTree, 
                                     treatment = treatmentdf[train.idx, ], 
-                                    est_data=dataEstim, est_treatment=treatmentdf[reestimation.idx, ],
+                                    est_data=dataEstim, est_treatment= treatmentdf[reestimation.idx, ],
                                     split.Rule=split.Rule, split.Honest= split.Honest, split.Bucket=split.Bucket, 
                                     bucketNum = bucketNum, 
                                     bucketMax = bucketMax, cv.option="CT", cv.Honest=T, 
@@ -478,10 +478,14 @@ consistentcausalForest <- function(formula, data, treatment,
       # print(d2.weights)
       d0.weights <- 1/d0.weights
       d2.weights <- 1/d2.weights
-      # print(d2.weights)
+      print(d0.weights)
+      print(d2.weights)
 
-      causalForest.obj$d0weights <- c(d0.weights/sum(d0.weights), d0.weights/sum(d0.weights))
-      causalForest.obj$d2weights <- c(d2.weights/sum(d2.weights), d2.weights/sum(d2.weights))
+      # causalForest.obj$d0weights <- c(d0.weights/sum(d0.weights), d0.weights/sum(d0.weights))
+      # causalForest.obj$d2weights <- c(d2.weights/sum(d2.weights), d2.weights/sum(d2.weights))
+
+      causalForest.obj$d0weights <- c(d0.weights, d0.weights)
+      causalForest.obj$d2weights <- c(d2.weights, d2.weights)
 
       # print(causalForest.obj$d2weights)
 

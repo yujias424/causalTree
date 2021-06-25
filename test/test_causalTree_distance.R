@@ -134,6 +134,8 @@ tree.2 <- honest.causalTree(as.formula(paste("y~",paste(f))),
                           bucketMax = bucketMax.temp, cv.option=cv.option.temp, cv.Honest=cv.Honest.temp, minsize = minsize.temp,
                           split.alpha = split.alpha.temp, cv.alpha = cv.alpha.temp, xval=xvalvec_test, HonestSampleSize=nest, cp=0)
 
+get.tree.struct(tree.2)
+tree.1$splits
 # #You can still prune as usual; the cptable is the one from training the tree
 # opcpid <- which.min(tree$cp[,4])
 # opcp <- tree$cp[opcpid,1]

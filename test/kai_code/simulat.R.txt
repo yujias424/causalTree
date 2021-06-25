@@ -1,0 +1,35 @@
+d1 <- generate.scenario(600, 400, 'f8', 'f1')
+d9 <- generate.scenario(600, 400, 'f8', 'f1', randomized = FALSE)
+
+d2 <- generate.scenario(600, 400, 'f5', 'f2', noise.sd = 0.25)
+d10 <- generate.scenario(600, 400, 'f5', 'f2', noise.sd = 0.25, randomized = FALSE)
+
+d3 <- generate.scenario(800, 300, 'f4', 'f3')
+d11 <- generate.scenario(800, 300, 'f4', 'f3', randomized = FALSE)
+
+d4 <- generate.scenario(800, 300, 'f7', 'f4', noise.sd = 0.25)
+d12 <- generate.scenario(800, 300, 'f7', 'f4', noise.sd = 0.25, randomized = FALSE)
+
+d5 <- generate.scenario(900, 200, 'f3', 'f5')
+d13 <- generate.scenario(900, 200, 'f3', 'f5', randomized = FALSE)
+
+d6 <- generate.scenario(900, 200, 'f1', 'f6')
+d14 <- generate.scenario(900, 200, 'f1', 'f6', randomized = FALSE)
+
+d7 <- generate.scenario(1000, 100, 'f2', 'f7', noise.sd = 4)
+d15 <- generate.scenario(1000, 100, 'f2', 'f7', noise.sd = 4, randomized = FALSE)
+
+d8 <- generate.scenario(1000, 100, 'f6', 'f8', noise.sd = 4)
+d16 <- generate.scenario(1000, 100, 'f6', 'f8', noise.sd = 4, randomized = FALSE)
+
+generate_simulation_function <- function(no_covar, coef_min = 0.3, coef_max = 0.5, constant = 0){
+    # set.seed(seed)
+    rand_coef = runif(no_covar, min = coef_min, max = coef_max)
+
+    sd <- sqrt(sum(rand_coef^2))
+    args <- sapply(1:no_covar, function(i) paste0(sqrt(5)*rand_coef[i]/sd, "*x[,", i, "]"))
+    body <- paste0(args, collapse = '+')
+
+    eval(parse(text = paste0('f <- function(x) {(' , body , ')}')))
+    return(get('f'))
+}
