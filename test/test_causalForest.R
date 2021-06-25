@@ -137,13 +137,74 @@ cf <- causalForest(as.formula(paste("y~",f)), data=dataTrain, treatment=dataTrai
                          split.Rule="CT", double.Sample = T, split.Honest=T,  split.Bucket=F, bucketNum = 5,
                          bucketMax = 100, cv.option="CT", cv.Honest=T, minsize = 2L, 
                         split.alpha = 0.5, cv.alpha = 0.5,
-                         sample.size.total = floor(nrow(dataTrain) / 2), sample.size.train.frac = .5,
-                         mtry = ceiling(ncol(dataTrain)/3), nodesize = 3, num.trees= 5,ncolx=ncolx,ncov_sample=ncov_sample
+                         sample.size.total = floor(nrow(dataTrain) / 10), sample.size.train.frac = .5,
+                         mtry = ceiling(ncol(dataTrain)/3), nodesize = 3, num.trees= 50,ncolx=ncolx,ncov_sample=ncov_sample
                    ) 
 
-cfpredtest <- predict(cf, newdata=dataTest, type="vector")
+cfpredtest <- predict(cf, newdata=dataTest, weight.type = NULL, type="vector")
 plot(dataTest$tau_true,cfpredtest)
 
+##############################################
+source("./R/causalForest.R")
+
+cf_const <- consistentcausalForest(as.formula(paste("y~",f)), data=dataTrain, treatment=dataTrain$w, 
+                   split.Rule="CT", double.Sample = T, split.Honest=T,  split.Bucket=F, bucketNum = 5,
+                   bucketMax = 100, cv.option="CT", cv.Honest=T, minsize = 2L, 
+                   split.alpha = 0.5, cv.alpha = 0.5,
+                   sample.size.total = floor(nrow(dataTrain) / 5), sample.size.train.frac = .5,
+                   mtry = ceiling(ncol(dataTrain)/3), nodesize = 3, num.trees= 50,ncolx=ncolx, ncov_sample=ncov_sample
+) 
+
+cfpredtest <- predict(cf_const, newdata=dataTest, weight.type = 2, type="vector")
+cor.test(dataTest$tau_true, cfpredtest)
+plot(dataTest$tau_true, cfpredtest)
+
+cfpredtest <- predict(cf_const, newdata=dataTest, weight.type = NULL, type="vector")
+cor.test(dataTest$tau_true, cfpredtest)
+plot(dataTest$tau_true, cfpredtest)
+
+# # get.tree.struct(cf[[1]])
+# # get.tree.struct(cf[[2]])
+# tree.1 <- cf[[1]]
+# tree.2 <- cf[[2]]
+# tree.1$nodes <- get.tree.struct(tree.1)
+# tree.2$nodes <- get.tree.struct(tree.2)
+# 
+# obtain_d2_distance(tree.1, tree.2, cf[[3]])
+# obtain_hamming_distance(obtain_bs(tree.1, cf[[3]]), obtain_bs(tree.2, cf[[3]]))
+# a <- cf[[3]]
+# # a <- cf[[1]]$frame
+# # b <- cf[[1]]$splits
+# # 
+# tree <- cf[[2]]
+# tmp.1 <- as.data.frame(tree$splits)
+# tmp.2 <- tree$frame
+# row.names(tmp.1) <- NULL
+# tmp.1$var <- attributes(tree$splits)$dimnames[[1]]
+# # tmp.1.rm0 <- tmp.1[tmp.1$count != 0, ]
+# index_tmp <- c()
+# for (i in 1:length(tmp.1$count)){
+#   if (i == 1){
+#     index_tmp <- c(index_tmp, 1)
+#     next
+#   } else {
+#     if ((tmp.1$count[i] != tmp.1$count[i-1]) && tmp.1$count[i] != 0){
+#       index_tmp <- c(index_tmp, i)
+#     }
+#   }
+# }
+# 
+# # tmp.1.rm0.index1 <- tmp.1.rm0 %>% group_by(count) %>% filter(row_number() == 1)
+# tmp.1.rm0.index1 <- tmp.1[index_tmp, ]
+# tmp.2$dep_ind <- rownames(tmp.2)
+# rownames(tmp.2) <- NULL
+# tmp.2.rmleaf <- tmp.2[tmp.2$var != "<leaf>", ]
+# rownames(tmp.2.rmleaf) <- NULL
+# tmp.1.rm0.index1$dep_ind <- tmp.2.rmleaf$dep_ind
+# 
+# tmp.1.rm0.index1$var
+# tmp.2.rmleaf$var
+##############################################
 cfpredtrainall <- predict(cf, newdata=dataTrain, predict.all = TRUE, type="vector")
 
 print(c("mean of ATE treatment effect from causalForest on Training data", round(mean(cfpredtrainall$aggregate),5)))
