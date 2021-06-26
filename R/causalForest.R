@@ -251,7 +251,7 @@ consistentcausalForest <- function(formula, data, treatment,
 
     print("Intersection of a and b is ")
     print(intersect(full.idx.a, full.idx.b))
-    print(setdiff(union(union(full.idx.a, full.idx.b) , eval.idx), seq(1, num.obs)))
+    print(setdiff(union(union(full.idx.a, full.idx.b), eval.idx), seq(1, num.obs)))
 
     print(paste0("The number of total observation is ", num.obs))
     print(paste0("The length of set a is ", length(full.idx.a)))
@@ -267,33 +267,60 @@ consistentcausalForest <- function(formula, data, treatment,
     }
     
     #randomize over the covariates for splitting (both train and reestimation)
-    cov_sample <- sample.int(ncolx)
-    cov_sample <- cov_sample[1:ncov_sample]
+    cov_sample.a <- sample.int(ncolx)
+    cov_sample.a <- cov_sample.a[1:ncov_sample]
+
+    cov_sample.b <- sample.int(ncolx)
+    cov_sample.b <- cov_sample.b[1:ncov_sample]
     
     #modify the y=f(x) equation accordingly for this tree
     #and modify the colnames
-    fsample <- ""
-    nextx <- ""
-    nameall_sample <- c()
+    # set a
+    fsample.a <- ""
+    nextx.a <- ""
+    nameall_sample.a <- c()
     for (ii in 1:(ncov_sample)) {
-      nextxindex <- cov_sample[ii]
-      nextx <- x[[nextxindex]]
+      nextxindex.a <- cov_sample.a[ii]
+      nextx.a <- x[[nextxindex.a]]
       if (ii == 1) {
-        fsample <- nextx
-        name <- nextx
+        fsample.a <- nextx.a
+        name.a <- nextx.a
       }
       if (ii > 1) {
-        fsample <- paste0(fsample,"+",nextx)
-        name <- c(name, nextx)
+        fsample.a <- paste0(fsample.a, "+", nextx.a)
+        name.a <- c(name.a, nextx.a)
       }
     }
-    nameall_sample <- c(name, y, "w") #, "tau_true")
+    nameall_sample.a <- c(name.a, y, "w") #, "tau_true")
+
+    # set b
+    fsample.b <- ""
+    nextx.b <- ""
+    nameall_sample.b <- c()
+    for (ii in 1:(ncov_sample)) {
+      nextxindex.b <- cov_sample.b[ii]
+      nextx.b <- x[[nextxindex.b]]
+      if (ii == 1) {
+        fsample.b <- nextx.b
+        name.b <- nextx.b
+      }
+      if (ii > 1) {
+        fsample.b <- paste0(fsample.b, "+", nextx.b)
+        name.b <- c(name.b, nextx.b)
+      }
+    }
+    nameall_sample.b <- c(name.b, y, "w") #, "tau_true")
     
     #store this var subset for each tree (need it during testing/predict stage)
-    causalForest.obj$cov_sample[tree.index,] <- cov_sample
+    causalForest.obj$cov_sample[tree.index, ] <- cov_sample.a
+    causalForest.obj$cov_sample[(tree.index + num.trees), ] <- cov_sample.b
+
     #also store the formula & colnames of X for each tree (need it during testing/predict stage)
-    causalForest.obj$nameall_sample[tree.index,] <- nameall_sample
-    causalForest.obj$fsample[[tree.index]] <- fsample
+    causalForest.obj$nameall_sample[tree.index, ] <- nameall_sample.a
+    causalForest.obj$fsample[[tree.index]] <- fsample.a
+
+    causalForest.obj$nameall_sample[(tree.index + num.trees), ] <- nameall_sample.b
+    causalForest.obj$fsample[[(tree.index + num.trees)]] <- fsample.b
     
     if(class(data)[1] == "data.table") {
       if (double.Sample) {
@@ -305,10 +332,10 @@ consistentcausalForest <- function(formula, data, treatment,
         dataEstim.b <- data.table(data[reestimation.idx.b, ])
 
         #pick relevant covariates for tree
-        treeRange.a <- c(cov_sample, (ncolx + 1):ncol(dataTree.a))
-        treeRange.b <- c(cov_sample, (ncolx + 1):ncol(dataTree.b))
-        estimRange.a <- c(cov_sample, (ncolx + 1):ncol(dataEstim.a))
-        estimRange.b <- c(cov_sample, (ncolx + 1):ncol(dataEstim.b))
+        treeRange.a <- c(cov_sample.a, (ncolx + 1):ncol(dataTree.a))
+        treeRange.b <- c(cov_sample.b, (ncolx + 1):ncol(dataTree.b))
+        estimRange.a <- c(cov_sample.a, (ncolx + 1):ncol(dataEstim.a))
+        estimRange.b <- c(cov_sample.b, (ncolx + 1):ncol(dataEstim.b))
         dataTree.a <- dataTree.a[, ..treeRange.a]
         dataTree.b <- dataTree.b[, ..treeRange.b]
         if (double.Sample) {
@@ -317,7 +344,7 @@ consistentcausalForest <- function(formula, data, treatment,
         }
 
         dataeval <- data.table(data[eval.idx, ])
-        treeRange.eval <- c(cov_sample, (ncolx + 1):ncol(dataeval))
+        treeRange.eval <- c(cov_sample.a, (ncolx + 1):ncol(dataeval))
         dataeval <- dataeval[, ..treeRange.eval]
 
       }else{
@@ -342,16 +369,16 @@ consistentcausalForest <- function(formula, data, treatment,
         dataEstim.b <- data.frame(data[reestimation.idx.b, ])
 
         #pick relevant covariates for tree
-        dataTree.a <- dataTree.a[, c(cov_sample, (ncolx + 1):ncol(dataTree.a))]
-        dataTree.b <- dataTree.b[, c(cov_sample, (ncolx + 1):ncol(dataTree.b))]
+        dataTree.a <- dataTree.a[, c(cov_sample.a, (ncolx + 1):ncol(dataTree.a))]
+        dataTree.b <- dataTree.b[, c(cov_sample.b, (ncolx + 1):ncol(dataTree.b))]
         if (double.Sample) {
-          dataEstim.a <- dataEstim.a[, c(cov_sample, (ncolx + 1):ncol(dataEstim.a))]
-          dataEstim.a <- dataEstim.b[, c(cov_sample, (ncolx + 1):ncol(dataEstim.b))]
+          dataEstim.a <- dataEstim.a[, c(cov_sample.a, (ncolx + 1):ncol(dataEstim.a))]
+          dataEstim.b <- dataEstim.b[, c(cov_sample.b, (ncolx + 1):ncol(dataEstim.b))]
         }
 
         dataeval <- data.frame(data[eval.idx, ])
-        treeRange.eval <- c(cov_sample, (ncolx + 1):ncol(dataeval))
-        dataeval <- dataeval[, c(cov_sample, (ncolx + 1):ncol(dataeval))]
+        treeRange.eval <- c(cov_sample.a, (ncolx + 1):ncol(dataeval)) # should not affect if we use all cov as cov sample
+        dataeval <- dataeval[, c(cov_sample.a, (ncolx + 1):ncol(dataeval))]
 
       } else {
         dataTree <- data.frame(data[full.idx, ])
@@ -367,22 +394,24 @@ consistentcausalForest <- function(formula, data, treatment,
     
     #change colnames to reflect the sampled cols
     if(double.Sample){
-      names(dataTree.a) <- nameall_sample
-      names(dataTree.b) <- nameall_sample
-      names(dataEstim.a) <- nameall_sample
-      names(dataEstim.b) <- nameall_sample
-      names(dataeval) <- nameall_sample
+      names(dataTree.a) <- nameall_sample.a
+      names(dataTree.b) <- nameall_sample.b
+      names(dataEstim.a) <- nameall_sample.a
+      names(dataEstim.b) <- nameall_sample.b
+      names(dataeval) <- nameall_sample.a
     } else {
       names(dataTree) <- nameall_sample
     }
     
     
     #save rdata for debug here, if needed
-    formula <- paste0(y, "~", fsample)
+    formula.a <- paste0(y, "~", fsample.a)
+    formula.b <- paste0(y, "~", fsample.b)
+
     
     if (double.Sample) {
       # we train two tree with given covariates using different part of data
-      tree.obj.a <- honest.causalTree(formula, data = dataTree.a, 
+      tree.obj.a <- honest.causalTree(formula.a, data = dataTree.a, 
                                     treatment = dataTree.a$w, #treatmentdf[train.idx.a, ], 
                                     est_data = dataEstim.a, est_treatment = dataEstim.a$w, #treatmentdf[reestimation.idx.a, ],
                                     split.Rule = split.Rule, split.Honest = split.Honest, split.Bucket = split.Bucket, 
@@ -394,16 +423,17 @@ consistentcausalForest <- function(formula, data, treatment,
 
       print(colnames(dataTree.a))
       print(dim(dataTree.a))
-      tree.obj.b <- honest.causalTree(formula, data = dataTree.b, 
+      tree.obj.b <- honest.causalTree(formula.b, data = dataTree.b, 
                                     treatment = dataTree.b$w, #treatmentdf[train.idx.b, ], 
-                                    est_data = dataEstim.b, est_treatment = dataTree.b$w, #treatmentdf[reestimation.idx.b, ],
+                                    est_data = dataEstim.b, est_treatment = dataEstim.b$w, #treatmentdf[reestimation.idx.b, ],
                                     split.Rule = split.Rule, split.Honest = split.Honest, split.Bucket = split.Bucket, 
                                     bucketNum = bucketNum, 
                                     bucketMax = bucketMax, cv.option = "CT", cv.Honest = T, 
                                     minsize = nodesize, 
                                     split.alpha = 0.5, cv.alpha = 0.5, xval = 0, 
                                     HonestSampleSize = est.size.b, cp = 0)
-
+      print(colnames(dataTree.b))
+      print(dim(dataTree.b))
       # # make prediction using two trees respectively.
       # a.prediction <- predict(tree.obj.a, newdata = dataeval, type = "vector")
       # b.prediction <- predict(tree.obj.b, newdata = dataeval, type = "vector")
