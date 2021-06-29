@@ -25,8 +25,24 @@ predict.causalForest <- function(forest, newdata, weight.type = NULL, predict.al
   } else {
     if (weight.type == 0){
       aggregate <- matrixStats::rowWeightedMeans(individual, w = forest$d0weights)
+    } else if(weight.type == 1){
+      aggregate <- matrixStats::rowWeightedMeans(individual, w = forest$d1weights)
+    } else if(weight.type == 10){
+      aggregate <- matrixStats::rowWeightedMeans(individual, w = forest$d1starweights)
     } else if(weight.type == 2){
       aggregate <- matrixStats::rowWeightedMeans(individual, w = forest$d2weights)
+    } else if(weight.type == 3){
+      aggregate <- matrixStats::rowWeightedMeans(individual, w = forest$corrweights)
+    } else if(weight.type == "0r"){
+      aggregate <- matrixStats::rowWeightedMeans(individual, w = forest$d0weights_r)
+    } else if(weight.type == "3r"){
+      aggregate <- matrixStats::rowWeightedMeans(individual, w = forest$corrweights_r)
+    } else if(weight.type == "2r"){
+      aggregate <- matrixStats::rowWeightedMeans(individual, w = forest$d2weights_r)
+    } else if(weight.type == "1r"){
+      aggregate <- matrixStats::rowWeightedMeans(individual, w = forest$d1weights_r)
+    } else if(weight.type == "10r"){
+      aggregate <- matrixStats::rowWeightedMeans(individual, w = forest$d1starweights_r)
     }
     
   }
@@ -233,7 +249,10 @@ consistentcausalForest <- function(formula, data, treatment,
   print("Building trees ...")
   
   d0.weights <- c()
+  d1.weights <- c()
+  d1.star.weights <- c()
   d2.weights <- c()
+  cor.weights  <- c()
   tree.index <- 1
   # for (tree.index in 1:num.trees) {
   while(tree.index <= num.trees) {
@@ -421,8 +440,8 @@ consistentcausalForest <- function(formula, data, treatment,
                                     split.alpha = 0.5, cv.alpha = 0.5, xval = 0, 
                                     HonestSampleSize = est.size.a, cp = 0)
 
-      print(colnames(dataTree.a))
-      print(dim(dataTree.a))
+      # print(colnames(dataTree.a))
+      # print(dim(dataTree.a))
       tree.obj.b <- honest.causalTree(formula.b, data = dataTree.b, 
                                     treatment = dataTree.b$w, #treatmentdf[train.idx.b, ], 
                                     est_data = dataEstim.b, est_treatment = dataEstim.b$w, #treatmentdf[reestimation.idx.b, ],
@@ -432,14 +451,17 @@ consistentcausalForest <- function(formula, data, treatment,
                                     minsize = nodesize, 
                                     split.alpha = 0.5, cv.alpha = 0.5, xval = 0, 
                                     HonestSampleSize = est.size.b, cp = 0)
-      print(colnames(dataTree.b))
-      print(dim(dataTree.b))
-      # # make prediction using two trees respectively.
-      # a.prediction <- predict(tree.obj.a, newdata = dataeval, type = "vector")
-      # b.prediction <- predict(tree.obj.b, newdata = dataeval, type = "vector")
+      # print(colnames(dataTree.b))
+      # print(dim(dataTree.b))
 
-      # # test the correlation between the prediction of a and b tree
-      # cor.res <- cor.test(a.prediction, b.prediction)
+      # make prediction using two trees respectively.
+      a.prediction <- predict(tree.obj.a, newdata = dataeval, type = "vector")
+      b.prediction <- predict(tree.obj.b, newdata = dataeval, type = "vector")
+
+      # test the correlation between the prediction of a and b tree
+      cor.res <- cor.test(a.prediction, b.prediction, method=c("pearson")) # "spearman", "kendall" 
+
+      cor.weights <- c(cor.weights, abs(cor.res$estimate))
  
       # print(colnames(dataeval)[!(colnames(dataeval) %in% c("y", "w"))])
       dataeval_x <- dataeval[, colnames(dataeval)[!(colnames(dataeval) %in% c("y", "w"))]]
@@ -473,9 +495,13 @@ consistentcausalForest <- function(formula, data, treatment,
       # return(list(tree.obj.a, tree.obj.b, dataeval_x))
 
       d0 <- obtain_hamming_distance(obtain_bs(tree.obj.a, dataeval_x), obtain_bs(tree.obj.b, dataeval_x))
+      d1 <- obtain_d1_distance_star_mc(tree.obj.a, tree.obj.b, dataeval_x)
+      d1.star <- d1 * d0
       d2 <- obtain_d2_distance(tree.obj.a, tree.obj.b, dataeval_x)
 
       d0.weights <- c(d0.weights, d0)
+      d1.weights <- c(d1.weights, d1)
+      d1.star.weights <- c(d1.star.weights, d1.star)
       d2.weights <- c(d2.weights, d2)
 
     }else {
@@ -490,6 +516,7 @@ consistentcausalForest <- function(formula, data, treatment,
     }
     
     if (double.Sample){
+      ################# Corr selection #################
       # if (cor.res$p.value > 0.05){
       #   next
       # } else {
@@ -498,6 +525,7 @@ consistentcausalForest <- function(formula, data, treatment,
       #   if (double.Sample) {causalForest.obj$inbag.Est[reestimation.idx.a, tree.index] <- 1}
       # }
       
+      ################# Give Weights #################
       # how to handle the tree object
       causalForest.obj$trees[[tree.index]] <- tree.obj.a
       causalForest.obj$inbag[full.idx.a, tree.index] <- 1
@@ -505,17 +533,29 @@ consistentcausalForest <- function(formula, data, treatment,
       causalForest.obj$trees[[tree.index + num.trees]] <- tree.obj.b
       causalForest.obj$inbag[full.idx.b, (tree.index + num.trees)] <- 1
 
-      # print(d2.weights)
-      d0.weights <- 1/d0.weights
-      d2.weights <- 1/d2.weights
-      print(d0.weights)
-      print(d2.weights)
+      # d0.weights <- 1/d0.weights
+      # d1.weights <- 1/d1.weights
+      # d1.star.weights <- 1/d1.star.weights
+      # d2.weights <- 1/d2.weights
 
-      # causalForest.obj$d0weights <- c(d0.weights/sum(d0.weights), d0.weights/sum(d0.weights))
-      # causalForest.obj$d2weights <- c(d2.weights/sum(d2.weights), d2.weights/sum(d2.weights))
+      # d0.weights <- d0.weights/sum(d0.weights)
+      # d1.weights <- d1.weights/sum(d1.weights)
+      # d1.star.weights <- d1.star.weights/sum(d1.star.weights)
+      # d2.weights <- d2.weights/sum(d2.weights)
 
       causalForest.obj$d0weights <- c(d0.weights, d0.weights)
+      causalForest.obj$d1weights <- c(d1.weights, d1.weights)
+      causalForest.obj$d1starweights <- c(d1.star.weights, d1.star.weights)
       causalForest.obj$d2weights <- c(d2.weights, d2.weights)
+
+      # reverse weights
+      causalForest.obj$d0weights_r <- c(1/d0.weights, 1/d0.weights)
+      causalForest.obj$d1weights_r <- c(1/d1.weights, 1/d1.weights)
+      causalForest.obj$d1starweights_r <- c(1/d1.star.weights, 1/d1.star.weights)
+      causalForest.obj$d2weights_r <- c(1/d2.weights, 1/d2.weights)
+
+      causalForest.obj$corrweights <- c(cor.weights, cor.weights)
+      causalForest.obj$corrweights_r <- c(1/cor.weights, 1/cor.weights)
 
       # print(causalForest.obj$d2weights)
 
@@ -534,6 +574,11 @@ consistentcausalForest <- function(formula, data, treatment,
 
   }
   
+  print(d0.weights)
+  print(d1.weights)
+  print(d1.star.weights)
+  print(d2.weights)
+
   print("Finished.")
   return(causalForest.obj)
 }
@@ -826,4 +871,127 @@ predict_tree <- function(node, sample, tree) {
       return(predict_tree(tree$nodes[[node$right_child]], sample, tree))
     }
   }
+}
+
+predict_sample_node <- function(node, sample, tree) {
+  # Check if this is leaf node
+  if (node$is_leaf == TRUE) {
+    return(node$dep_ind)
+  } else {
+    # Check split varibale
+    split_var <- node$split_variable
+    split_val <- node$split_value
+    if (sample[split_var] <= split_val) {
+      return(predict_tree(tree$nodes[[node$left_child]], sample, tree))
+    } else {
+      return(predict_tree(tree$nodes[[node$right_child]], sample, tree))
+    }
+  }
+}
+
+obtain_itij <- function(tree, sample_i, sample_j) {
+  
+  tree_predict_node_i <- predict_sample_node(tree$nodes[[1]], sample_i, tree)
+  tree_predict_node_j <- predict_sample_node(tree$nodes[[1]], sample_j, tree)
+
+  it <- ifelse(tree_predict_node_i == tree_predict_node_j, 1, 0)
+
+  return(it) 
+}
+
+obtain_d1_distance <- function(tree1, tree2, data){
+  d1 <- 0
+  
+  allcomb <- combinat::combn(nrow(data), 2)
+  
+  for (k in 1:dim(allcomb)[2]) { 
+    i <- allcomb[1, k]
+    j <- allcomb[2, k]
+    
+    # IT1
+    it1_ij <- obtain_itij(tree1, data[i, ], data[j, ])
+    it2_ij <- obtain_itij(tree2, data[i, ], data[j, ])
+
+    d1 <- d1 + abs(it1_ij - it2_ij)
+  }
+  
+  print(d1)
+  d1 <- d1/choose(nrow(data),2)
+  return(d1)
+}
+
+obtain_d1_distance_mc <- function(tree1, tree2, data){
+  d1 <- 0
+  
+  allcomb <- combinat::combn(nrow(data), 2)
+  
+  cl <- parallel::makeForkCluster(11)
+  doParallel::registerDoParallel(cl)
+  
+  d1 <- foreach(k = 1:dim(allcomb)[2], .combine = "+") %dopar% {
+    i <- allcomb[1, k]
+    j <- allcomb[2, k]
+    
+    # IT1
+    it1_ij <- obtain_itij(tree1, data[i, ], data[j, ])
+    it2_ij <- obtain_itij(tree2, data[i, ], data[j, ])
+    
+    abs(it1_ij - it2_ij)
+  }
+
+  parallel::stopCluster(cl)
+  
+  print(d1)
+  d1 <- d1/choose(nrow(data),2)
+  d1 <- d1 * obtain_hamming_distance(obtain_bs(tree1, data), obtain_bs(tree2, data))
+  return(d1)
+}
+
+obtain_d1_distance_star <- function(tree1, tree2, data){
+  d1 <- 0
+  
+  allcomb <- combinat::combn(nrow(data), 2)
+  
+  for (k in 1:dim(allcomb)[2]) { 
+    i <- allcomb[1, k]
+    j <- allcomb[2, k]
+    
+    # IT1
+    it1_ij <- obtain_itij(tree1, data[i, ], data[j, ])
+    it2_ij <- obtain_itij(tree2, data[i, ], data[j, ])
+
+    d1 <- d1 + abs(it1_ij - it2_ij)
+  }
+  
+  print(d1)
+  d1 <- d1/choose(nrow(data),2)
+  d1 <- d1 * obtain_hamming_distance(obtain_bs(tree1, data), obtain_bs(tree2, data))
+  return(d1)
+}
+
+obtain_d1_distance_star_mc <- function(tree1, tree2, data){
+  d1 <- 0
+  
+  allcomb <- combinat::combn(nrow(data), 2)
+
+  cl <- parallel::makeForkCluster(11)
+  doParallel::registerDoParallel(cl)
+  
+  d1 <- foreach(k = 1:dim(allcomb)[2], .combine = "+") %dopar% {
+    i <- allcomb[1, k]
+    j <- allcomb[2, k]
+    
+    # IT1
+    it1_ij <- obtain_itij(tree1, data[i, ], data[j, ])
+    it2_ij <- obtain_itij(tree2, data[i, ], data[j, ])
+    
+    abs(it1_ij - it2_ij)
+  }
+
+  parallel::stopCluster(cl)
+  
+  print(d1)
+  d1 <- d1/choose(nrow(data),2)
+  d1 <- d1 * obtain_hamming_distance(obtain_bs(tree1, data), obtain_bs(tree2, data))
+  return(d1)
 }

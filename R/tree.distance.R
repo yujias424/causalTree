@@ -150,21 +150,117 @@ predict_tree <- function(node, sample, tree) {
   }
 }
 
-# predict_sample_node <- function(node, sample, tree) {
-#   # Check if this is leaf node
-#   if (node$is_leaf == TRUE) {
-#     return(node$dep_ind)
-#   } else {
-#     # Check split varibale
-#     split_var <- node$split_variable
-#     split_val <- node$split_value
-#     if (sample[split_var] <= split_val) {
-#       return(predict_tree(tree$nodes[[node$left_child]], sample, tree))
-#     } else {
-#       return(predict_tree(tree$nodes[[node$right_child]], sample, tree))
-#     }
-#   }
-# }
+predict_sample_node <- function(node, sample, tree) {
+  # Check if this is leaf node
+  if (node$is_leaf == TRUE) {
+    return(node$dep_ind)
+  } else {
+    # Check split varibale
+    split_var <- node$split_variable
+    split_val <- node$split_value
+    if (sample[split_var] <= split_val) {
+      return(predict_tree(tree$nodes[[node$left_child]], sample, tree))
+    } else {
+      return(predict_tree(tree$nodes[[node$right_child]], sample, tree))
+    }
+  }
+}
+
+obtain_itij <- function(tree, sample_i, sample_j) {
+  
+  tree_predict_node_i <- predict_sample_node(tree$nodes[[1]], sample_i, tree)
+  tree_predict_node_j <- predict_sample_node(tree$nodes[[1]], sample_j, tree)
+
+  it <- ifelse(tree_predict_node_i == tree_predict_node_j, 1, 0)
+
+  return(it)
+}
+
+obtain_d1_distance <- function(tree1, tree2, data){
+  d1 <- 0
+  
+  allcomb <- combinat::combn(nrow(data), 2)
+  
+  for (k in 1:dim(allcomb)[2]) { 
+    i <- allcomb[1, k]
+    j <- allcomb[2, k]
+    
+    # IT1
+    it1_ij <- obtain_itij(tree1, data[i, ], data[j, ])
+    it2_ij <- obtain_itij(tree2, data[i, ], data[j, ])
+
+    d1 <- d1 + abs(it1_ij - it2_ij)
+  }
+  
+  print(d1)
+  d1 <- d1/choose(nrow(data),2)
+  return(d1)
+}
+
+obtain_d1_distance_mc <- function(tree1, tree2, data){
+  d1 <- 0
+  
+  allcomb <- combinat::combn(nrow(data), 2)
+  
+  d1 <- foreach(k = 1:dim(allcomb)[2], .combine = "+") %dopar% {
+    i <- allcomb[1, k]
+    j <- allcomb[2, k]
+    
+    # IT1
+    it1_ij <- obtain_itij(tree1, data[i, ], data[j, ])
+    it2_ij <- obtain_itij(tree2, data[i, ], data[j, ])
+    
+    abs(it1_ij - it2_ij)
+  }
+  
+  print(d1)
+  d1 <- d1/choose(nrow(data),2)
+  return(d1)
+}
+
+obtain_d1_distance_star <- function(tree1, tree2, data){
+  d1 <- 0
+  
+  allcomb <- combinat::combn(nrow(data), 2)
+  
+  for (k in 1:dim(allcomb)[2]) { 
+    i <- allcomb[1, k]
+    j <- allcomb[2, k]
+    
+    # IT1
+    it1_ij <- obtain_itij(tree1, data[i, ], data[j, ])
+    it2_ij <- obtain_itij(tree2, data[i, ], data[j, ])
+
+    d1 <- d1 + abs(it1_ij - it2_ij)
+  }
+  
+  print(d1)
+  d1 <- d1/choose(nrow(data),2)
+  d1 <- d1 * obtain_hamming_distance(obtain_bs(tree1, data), obtain_bs(tree2, data))
+  return(d1)
+}
+
+obtain_d1_distance_star_mc <- function(tree1, tree2, data){
+  d1 <- 0
+  
+  allcomb <- combinat::combn(nrow(data), 2)
+  
+  d1 <- foreach(k = 1:dim(allcomb)[2], .combine = "+") %dopar% {
+    i <- allcomb[1, k]
+    j <- allcomb[2, k]
+    
+    # IT1
+    it1_ij <- obtain_itij(tree1, data[i, ], data[j, ])
+    it2_ij <- obtain_itij(tree2, data[i, ], data[j, ])
+    
+    abs(it1_ij - it2_ij)
+  }
+  
+  print(d1)
+  d1 <- d1/choose(nrow(data),2)
+  d1 <- d1 * obtain_hamming_distance(obtain_bs(tree1, data), obtain_bs(tree2, data))
+  return(d1)
+}
 
 # obtain_d1_distance <- function(tree1, tree2, data){
 #   d1 <- 0

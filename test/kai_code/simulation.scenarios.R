@@ -78,7 +78,7 @@ d14 <- as.data.frame(generate.scenario(900, 200, 'f1', 'f6', randomized = FALSE)
 d7 <- as.data.frame(generate.scenario(1000, 100, 'f2', 'f7', noise.sd = 4))
 d15 <- as.data.frame(generate.scenario(1000, 100, 'f2', 'f7', noise.sd = 4, randomized = FALSE))
 
-d8 <- as.data.frame(generate.scenario(1000, 100, 'f6', 'f8', noise.sd = 4))
+d8 <- as.data.frame(generate.scenario(300, 100, 'f6', 'f8', noise.sd = 4))
 d16 <- as.data.frame(generate.scenario(1000, 100, 'f6', 'f8', noise.sd = 4, randomized = FALSE))
 
 generate_simulation_function <- function(no_covar, coef_min = 0.3, coef_max = 0.5, constant = 0){

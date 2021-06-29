@@ -9,8 +9,6 @@ parallel::stopCluster(cl)
 source("./test/kai_code/simulation.R")
 source("./test/kai_code/simulation.scenarios.R")
 
-d1 <- generate.scenario(600, 400, 'f8', 'f1')
-
 # create formulas for estimation
 p <- 100
 f <- ""
@@ -28,8 +26,8 @@ if (p>1) {
 }
 
 # set training and testing data
-dataTrain <- d16[1:600, ]
-dataTest <- d16[601:1000, ]
+dataTrain <- d16[1:500, ]
+dataTest <- d16[501:1000, ]
 
 ncov_sample <- floor(p/3)
 ncov_sample <- p
@@ -61,7 +59,31 @@ cfpredtest <- predict(cf_const, newdata=dataTest, weight.type = 0, type="vector"
 cor.test(dataTest$tau_true, cfpredtest)
 plot(dataTest$tau_true, cfpredtest)#, ylim = c(0,3))
 
+cfpredtest <- predict(cf_const, newdata=dataTest, weight.type = "0r", type="vector")
+cor.test(dataTest$tau_true, cfpredtest)
+plot(dataTest$tau_true, cfpredtest)#, ylim = c(0,3))
+
+cfpredtest <- predict(cf_const, newdata=dataTest, weight.type = 1, type="vector")
+cor.test(dataTest$tau_true, cfpredtest)
+plot(dataTest$tau_true, cfpredtest)#, ylim = c(0,3))
+
+cfpredtest <- predict(cf_const, newdata=dataTest, weight.type = 10, type="vector")
+cor.test(dataTest$tau_true, cfpredtest)
+plot(dataTest$tau_true, cfpredtest)#, ylim = c(0,3))
+
 cfpredtest <- predict(cf_const, newdata=dataTest, weight.type = 2, type="vector")
+cor.test(dataTest$tau_true, cfpredtest)
+plot(dataTest$tau_true, cfpredtest)#, ylim = c(0,3))
+
+cfpredtest <- predict(cf_const, newdata=dataTest, weight.type = "2r", type="vector")
+cor.test(dataTest$tau_true, cfpredtest)
+plot(dataTest$tau_true, cfpredtest)#, ylim = c(0,3))
+
+cfpredtest <- predict(cf_const, newdata=dataTest, weight.type = 3, type="vector")
+cor.test(dataTest$tau_true, cfpredtest)
+plot(dataTest$tau_true, cfpredtest)#, ylim = c(0,3))
+
+cfpredtest <- predict(cf_const, newdata=dataTest, weight.type = "3r", type="vector")
 cor.test(dataTest$tau_true, cfpredtest)
 plot(dataTest$tau_true, cfpredtest)#, ylim = c(0,3))
 

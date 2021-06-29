@@ -13,6 +13,7 @@ library(causalTree)
 library(reshape2)
 library(plyr)
 
+source("./R/tree.distance.R")
 
 # Generate data 
 # parameters for data generating
@@ -134,8 +135,43 @@ tree.2 <- honest.causalTree(as.formula(paste("y~",paste(f))),
                           bucketMax = bucketMax.temp, cv.option=cv.option.temp, cv.Honest=cv.Honest.temp, minsize = minsize.temp,
                           split.alpha = split.alpha.temp, cv.alpha = cv.alpha.temp, xval=xvalvec_test, HonestSampleSize=nest, cp=0)
 
-get.tree.struct(tree.2)
-tree.1$splits
+tree.1$nodes <- get.tree.struct(tree.1)
+tree.2$nodes <- get.tree.struct(tree.2)
+
+combinat::combn(10, 2)
+
+# test for d1.
+source("./R/tree.distance.R")
+
+cl <- parallel::makeForkCluster(10)
+doParallel::registerDoParallel(cl)
+parallel::stopCluster(cl)
+
+start.time <- Sys.time()
+obtain_d1_distance(tree.1, tree.2, dataTrain[1:100, !(colnames(dataTrain) %in% c("y", "w", "tau_true"))])
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+time.taken
+
+start.time <- Sys.time()
+obtain_d1_distance_mc(tree.1, tree.2, dataTrain[1:100, !(colnames(dataTrain) %in% c("y", "w", "tau_true"))])
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+time.taken
+
+start.time <- Sys.time()
+obtain_d1_distance_star(tree.1, tree.2, dataTrain[1:100, !(colnames(dataTrain) %in% c("y", "w", "tau_true"))])
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+time.taken
+
+start.time <- Sys.time()
+obtain_d1_distance_star_mc(tree.1, tree.2, dataTrain[1:100, !(colnames(dataTrain) %in% c("y", "w", "tau_true"))])
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+time.taken
+
+
 # #You can still prune as usual; the cptable is the one from training the tree
 # opcpid <- which.min(tree$cp[,4])
 # opcp <- tree$cp[opcpid,1]
